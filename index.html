@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>கடன் கணக்கு</title>
+<style>
+:root{--pri:#0d6efd;--dk:#1c222d;--br:#dfe3ea;--tx:#1d2330;--mut:#6b7280}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(#dce8f7,#eef3fa);min-height:100vh;color:var(--tx);font-family:"Noto Sans Tamil","Latha",system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+h1{text-align:center;font-size:1.5rem;margin:8px 0 14px;color:#173a73}
+.card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(20,40,80,.08);margin-bottom:14px;overflow:hidden}
+.ch{background:var(--pri);color:#fff;padding:11px 16px;font-weight:700}
+.cb{padding:14px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
+label{display:block;font-size:.88rem;margin-bottom:3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--br);border-radius:8px;background:#fff;color:var(--tx);font:inherit}
+button{font:inherit;border:0;border-radius:8px;padding:9px 15px;cursor:pointer;color:#fff;background:var(--pri)}
+button:hover{filter:brightness(.92)}
+.b-g{background:#198754}.b-r{background:#dc3545}.b-y{background:#ffc107;color:#222}.b-k{background:#6c757d}.b-c{background:#0dcaf0;color:#112}
+.b-o{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+button.sm{padding:4px 9px;font-size:.85rem}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.st{background:#fff;border-radius:12px;padding:12px;text-align:center;border-left:5px solid var(--pri);box-shadow:0 2px 10px rgba(20,40,80,.08)}
+.st b{display:block;font-size:1.7rem;line-height:1.2}
+.st:nth-child(2){border-color:#198754}.st:nth-child(3){border-color:#dc3545}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bar input{flex:1 1 240px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:#fff;color:var(--tx);border:1px solid var(--br)}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.th{background:var(--dk);color:#fff;padding:11px 16px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{background:var(--dk);color:#fff;padding:10px 8px;text-align:center;font-size:.9rem}
+td{border-bottom:1px solid var(--br);padding:9px 8px;text-align:center;vertical-align:middle;font-size:.92rem}
+td.l{text-align:left}
+td.act{white-space:nowrap}
+.pos{color:#dc3545;font-weight:700}.neg{color:#198754;font-weight:700}.zero{color:var(--mut);font-weight:700}
+.lb{display:block;font-size:.72rem;font-weight:400}
+.empty{text-align:center;color:var(--mut);padding:24px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:14px;z-index:9}
+.ov.on{display:flex}
+.mb{background:#fff;border-radius:14px;width:100%;max-width:640px;max-height:90vh;overflow:auto}
+.mh{background:var(--pri);color:#fff;padding:11px 16px;display:flex;justify-content:space-between;align-items:center}
+.sub{color:var(--mut);font-size:.85rem}
+.sync{display:inline-block;background:#fff;border:1px solid var(--br);border-radius:99px;padding:3px 14px;font-size:.85rem;cursor:pointer}
+.mt table{min-width:480px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>கடன் கணக்கு</h1>
+<div style="text-align:center;margin:-6px 0 12px"><span class="sync" id="sync" onclick="pull(true)">☁ Sync அமை</span></div>
+
+<div class="card">
+ <div class="ch" id="formTitle">புதிய பதிவு / திருத்தம்</div>
+ <div class="cb">
+  <div class="grid">
+   <div><label>பெயர் *</label><input id="name" list="plist" oninput="fillPhone()"><datalist id="plist"></datalist></div>
+   <div><label>செல் நம்பர்</label><input id="phone" inputmode="tel" maxlength="15"></div>
+   <div><label>தேதி</label><input id="date" type="date"></div>
+   <div><label>வகை *</label><select id="type"><option value="b">வாங்கியது</option><option value="g">கொடுத்தது</option></select></div>
+   <div><label>தொகை (₹) *</label><input id="amt" type="number" min="0" step="any" inputmode="decimal"></div>
+   <div><label>குறிப்பு</label><input id="note" placeholder="கூடுதல் விவரம்"></div>
+   <div style="display:flex;gap:8px"><button onclick="save()">சேமி / புதுப்பி</button><button class="b-k" onclick="resetForm()">Clear</button></div>
+  </div>
+ </div>
+</div>
+
+<div class="stats">
+ <div class="st">மொத்த வாங்கியது<b id="s1">₹0</b></div>
+ <div class="st">மொத்த கொடுத்தது<b id="s2">₹0</b></div>
+ <div class="st">நிகர பேலன்ஸ் <span class="sub">(வர வேண்டியது)</span><b id="s3">₹0</b></div>
+</div>
+
+<div class="bar">
+ <input id="q" placeholder="பெயர் / செல் நம்பர் மூலம் தேடுக..." oninput="render()">
+ <button class="b-k" onclick="exportJ()">JSON ஏற்றுமதி</button>
+ <button class="b-k" onclick="document.getElementById('imp').click()">இறக்குமதி</button>
+ <button class="b-o" onclick="openM('pSet','அமைப்பு')">⚙ அமைப்பு</button>
+ <button class="b-r" onclick="delSel()">தேர்வு செய்தவை நீக்கு</button>
+ <input type="file" id="imp" accept=".json" style="display:none" onchange="importJ(event)">
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="card">
+ <div class="th"><b>கணக்குகள் பட்டியல்</b><span id="cnt"></span></div>
+ <div class="tw"><table>
+  <thead><tr><th><input type="checkbox" id="all" style="width:auto" onchange="togAll(this.checked)"></th><th>#</th><th>பெயர்</th><th>செல் நம்பர்</th><th>வாங்கியது</th><th>கொடுத்தது</th><th>பேலன்ஸ்</th><th>செயல்</th></tr></thead>
+  <tbody id="tb"></tbody>
+ </table></div>
+</div>
+</div>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeM()">
+ <div class="mb">
+  <div class="mh"><b id="mt"></b><button class="b-k sm" onclick="closeM()">✕</button></div>
+  <div class="cb">
+   <div id="pSet" style="display:none">
+    <label>☁ Google Apps Script URL (எல்லா கணினியிலும் தெரிய)</label>
+    <div class="grid" style="grid-template-columns:1fr auto">
+     <input id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+     <button class="b-g" onclick="saveGas()">சேமி &amp; Sync</button>
+    </div>
+    <p class="sub">பேலன்ஸ் = வாங்கியது − கொடுத்தது. நேர்மறை என்றால் அவரிடமிருந்து வர வேண்டியது, எதிர்மறை என்றால் அவருக்குக் கொடுக்க வேண்டியது.</p>
+   </div>
+   <div id="pDet" class="mt" style="display:none"></div>
+  </div>
+ </div>
+</div>
+
+<script>
+var GAS_URL="https://script.google.com/macros/s/AKfycbyNnGwXzHMBaQs7LYk2c6h8Gncg6T-5pZoRIx4Fc-zek8JixOl4LJ6wkHDKJt0Y_2H5SQ/exec";
+var people=[],tx=[],editTx=null,tab="all";
+function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function digits(s){return String(s||"").replace(/\D/g,"").slice(-10)}
+function money(n){return "₹"+Number(n).toLocaleString("en-IN",{maximumFractionDigits:2})}
+function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function fd(s){var p=String(s||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:s}
+people=ld("ln_people",[]);tx=ld("ln_tx",[]);
+var gas=ld("ln_gas","")||GAS_URL,pushT=null,dirty=false;
+function persist(){sv("ln_people",people);sv("ln_tx",tx);schedulePush()}
+function setSync(t){$("sync").textContent=t}
+function tm(){return new Date().toLocaleTimeString("ta-IN")}
+function schedulePush(){if(!gas)return;dirty=true;clearTimeout(pushT);setSync("☁ சேமிக்கிறது...");pushT=setTimeout(push,1200)}
+function push(){if(!gas)return;
+ fetch(gas,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"save",people:people,tx:tx})})
+ .then(function(r){return r.json()}).then(function(j){if(j.ok){dirty=false;setSync("☁ சிங்க் ஆனது ("+tm()+")")}else setSync("⚠ சிங்க் தோல்வி")})
+ .catch(function(){setSync("⚠ இணையம் / URL சரிபார்க்கவும்")})}
+function pull(manual){
+ if(!gas){if(manual)openM("pSet","அமைப்பு");return}
+ if(dirty){push();return}
+ setSync("☁ ஏற்றுகிறது...");
+ fetch(gas+(gas.indexOf("?")>-1?"&":"?")+"t="+Date.now()).then(function(r){return r.json()}).then(function(j){
+  if(!j.ok)throw new Error("x");
+  if(j.people.length||j.tx.length){people=j.people;tx=j.tx;sv("ln_people",people);sv("ln_tx",tx);render();setSync("☁ சிங்க் ஆனது ("+tm()+")")}
+  else if(people.length||tx.length){push()}
+  else setSync("☁ சிங்க் ஆனது ("+tm()+")")
+ }).catch(function(){setSync("⚠ இணையம் / URL சரிபார்க்கவும்")})}
+function saveGas(){gas=$("gasUrl").value.trim();sv("ln_gas",gas);if(gas){pull();closeM()}else setSync("☁ Sync அமை")}
+function openM(p,t){$("pSet").style.display=p==="pSet"?"block":"none";$("pDet").style.display=p==="pDet"?"block":"none";$("mt").textContent=t;$("ov").className="ov on"}
+function closeM(){$("ov").className="ov"}
+function find(name,phone){var ph=digits(phone),n=name.trim().toLowerCase();
+ if(ph.length>=6){var a=people.filter(function(p){return digits(p.phone)===ph})[0];if(a)return a}
+ return people.filter(function(p){return p.name.trim().toLowerCase()===n})[0]}
+function fillPhone(){var p=find($("name").value,"");if(p&&!$("phone").value&&p.phone)$("phone").value=p.phone}
+function sums(pid){var b=0,g=0;tx.forEach(function(t){if(t.pid===pid){if(t.type==="b")b+=t.amt;else g+=t.amt}});return{b:b,g:g,bal:Math.round((b-g)*100)/100}}
+function balHtml(v){if(v>0)return '<span class="pos">'+money(v)+'<span class="lb">வர வேண்டியது</span></span>';
+ if(v<0)return '<span class="neg">'+money(-v)+'<span class="lb">கொடுக்க வேண்டியது</span></span>';
+ return '<span class="zero">₹0<span class="lb">தீர்ந்தது</span></span>'}
+function cleanup(){people=people.filter(function(p){return tx.some(function(t){return t.pid===p.id})})}
+function save(){
+ var name=$("name").value.trim(),phone=$("phone").value.trim(),amt=parseFloat($("amt").value);
+ if(!name){alert("பெயர் உள்ளிடவும்");return}
+ if(!(amt>0)){alert("சரியான தொகை உள்ளிடவும்");return}
+ var p=find(name,phone);
+ if(!p){p={id:uid(),name:name,phone:phone};people.push(p)}else if(phone&&!p.phone){p.phone=phone}
+ var rec={id:editTx||uid(),pid:p.id,date:$("date").value||today(),type:$("type").value,amt:amt,note:$("note").value.trim()};
+ if(editTx){tx=tx.map(function(t){return t.id===editTx?rec:t})}else{tx.push(rec)}
+ cleanup();persist();resetForm();render()}
+function resetForm(){editTx=null;["name","phone","amt","note"].forEach(function(i){$(i).value=""});$("date").value=today();$("type").value="b";$("formTitle").textContent="புதிய பதிவு / திருத்தம்"}
+function addFor(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;resetForm();$("name").value=p.name;$("phone").value=p.phone||"";
+ closeM();window.scrollTo({top:0,behavior:"smooth"});$("amt").focus()}
+function editT(id){var t=tx.filter(function(x){return x.id===id})[0];if(!t)return;var p=people.filter(function(x){return x.id===t.pid})[0];
+ editTx=id;$("name").value=p?p.name:"";$("phone").value=p?p.phone:"";$("date").value=t.date;$("type").value=t.type;$("amt").value=t.amt;$("note").value=t.note;
+ $("formTitle").textContent="திருத்தம்: "+(p?p.name:"");closeM();window.scrollTo({top:0,behavior:"smooth"})}
+function delT(id,pid){if(!confirm("இந்தப் பதிவை நீக்கவா?"))return;tx=tx.filter(function(t){return t.id!==id});cleanup();persist();render();
+ if(people.some(function(p){return p.id===pid}))det(pid);else closeM()}
+function delP(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;
+ if(!confirm('"'+p.name+'" கணக்கையும் அதன் எல்லாப் பதிவுகளையும் நீக்கவா?'))return;
+ tx=tx.filter(function(t){return t.pid!==pid});people=people.filter(function(x){return x.id!==pid});persist();render()}
+function togAll(c){document.querySelectorAll(".ck").forEach(function(e){e.checked=c})}
+function delSel(){var ids=[].slice.call(document.querySelectorAll(".ck:checked")).map(function(e){return e.getAttribute("data-id")});
+ if(!ids.length){alert("நீக்க வேண்டியவற்றைத் தேர்வு செய்யவும்");return}
+ if(!confirm(ids.length+" கணக்குகளையும் அவற்றின் பதிவுகளையும் நீக்கவா?"))return;
+ tx=tx.filter(function(t){return ids.indexOf(t.pid)<0});people=people.filter(function(p){return ids.indexOf(p.id)<0});persist();render()}
+function editP(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;
+ var n=prompt("பெயர்",p.name);if(n===null)return;var ph=prompt("செல் நம்பர்",p.phone||"");if(ph===null)return;
+ if(n.trim())p.name=n.trim();p.phone=ph.trim();persist();render();det(pid)}
+function det(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;
+ var s=sums(pid),run=0;
+ var L=tx.filter(function(t){return t.pid===pid}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});
+ var rows=L.map(function(t){run+=(t.type==="b"?t.amt:-t.amt);run=Math.round(run*100)/100;
+  return '<tr><td>'+fd(t.date)+'</td><td>'+(t.type==="b"?money(t.amt):"")+'</td><td>'+(t.type==="g"?money(t.amt):"")+'</td><td>'+money(run)+'</td><td class="l">'+esc(t.note)+'</td><td class="act"><button class="b-y sm" onclick="editT(\''+t.id+'\')">✏️</button> <button class="b-r sm" onclick="delT(\''+t.id+'\',\''+pid+'\')">🗑️</button></td></tr>'}).join("");
+ $("pDet").innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div><b style="font-size:1.1rem">'+esc(p.name)+'</b><div class="sub">'+esc(p.phone||"செல் நம்பர் இல்லை")+'</div></div><div style="text-align:right">'+balHtml(s.bal)+'</div></div>'+
+ '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="sm" onclick="addFor(\''+pid+'\')">➕ புதிய பதிவு</button><button class="b-g sm" onclick="wa(\''+pid+'\')">💬 வாட்சப்</button><button class="b-y sm" onclick="editP(\''+pid+'\')">பெயர்/செல் திருத்து</button></div>'+
+ '<div class="tw"><table><tr><th>தேதி</th><th>வாங்கியது</th><th>கொடுத்தது</th><th>பேலன்ஸ்</th><th>குறிப்பு</th><th></th></tr>'+rows+'</table></div>';
+ openM("pDet","கணக்கு விபரம்")}
+function wa(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;var s=sums(pid);
+ var st=s.bal>0?"வர வேண்டியது: "+money(s.bal):s.bal<0?"கொடுக்க வேண்டியது: "+money(-s.bal):"கணக்கு தீர்ந்தது";
+ var m="*"+p.name+"* - கணக்கு விபரம்\nவாங்கியது: "+money(s.b)+"\nகொடுத்தது: "+money(s.g)+"\nபேலன்ஸ்: "+st+"\n- தாஸ் பொது சேவை மையம்";
+ var ph=digits(p.phone);window.open("https://wa.me/"+(ph.length===10?"91"+ph:"")+"?text="+encodeURIComponent(m),"_blank")}
+function setTab(t){tab=t;render()}
+function render(){
+ var q=$("q").value.trim().toLowerCase(),R=people.map(function(p){var s=sums(p.id);return{p:p,b:s.b,g:s.g,bal:s.bal}});
+ R.sort(function(a,b){return a.p.name.localeCompare(b.p.name,"ta")});
+ var tb=0,tg=0;R.forEach(function(r){tb+=r.b;tg+=r.g});
+ $("s1").textContent=money(tb);$("s2").textContent=money(tg);$("s3").textContent=money(tb-tg);
+ var nP=R.filter(function(r){return r.bal>0}).length,nN=R.filter(function(r){return r.bal<0}).length,nZ=R.filter(function(r){return r.bal===0}).length;
+ var T=[["all","எல்லாம் ("+R.length+")"],["pos","வர வேண்டியவை ("+nP+")"],["neg","கொடுக்க வேண்டியவை ("+nN+")"],["zero","தீர்ந்தவை ("+nZ+")"]];
+ $("tabs").innerHTML=T.map(function(t){return '<button class="'+(tab===t[0]?"on":"")+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+'</button>'}).join("");
+ var L=R.filter(function(r){return(tab==="all"||(tab==="pos"&&r.bal>0)||(tab==="neg"&&r.bal<0)||(tab==="zero"&&r.bal===0))&&(!q||(r.p.name+" "+(r.p.phone||"")).toLowerCase().indexOf(q)>-1)});
+ $("cnt").textContent=L.length+" கணக்குகள்";$("all").checked=false;
+ $("plist").innerHTML=people.map(function(p){return '<option value="'+esc(p.name)+'">'}).join("");
+ $("tb").innerHTML=L.length?L.map(function(r,i){var p=r.p,id=p.id;
+  return '<tr><td><input type="checkbox" class="ck" style="width:auto" data-id="'+id+'"></td><td>'+(i+1)+'</td><td class="l"><b>'+esc(p.name)+'</b></td><td>'+esc(p.phone||"")+'</td><td>'+money(r.b)+'</td><td>'+money(r.g)+'</td><td>'+balHtml(r.bal)+'</td>'+
+  '<td class="act"><button class="b-c sm" title="விபரம்" onclick="det(\''+id+'\')">👁</button> <button class="sm" title="புதிய பதிவு" onclick="addFor(\''+id+'\')">➕</button> <button class="b-g sm" title="வாட்சப்" onclick="wa(\''+id+'\')">💬</button> <button class="b-r sm" title="நீக்கு" onclick="delP(\''+id+'\')">🗑️</button></td></tr>'
+ }).join(""):'<tr><td colspan="8" class="empty">பதிவுகள் எதுவும் இல்லை</td></tr>';
+}
+function exportJ(){var b=new Blob([JSON.stringify({people:people,tx:tx})],{type:"application/json"});
+ var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="loan_ledger.json";a.click()}
+function importJ(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();
+ r.onload=function(){try{var j=JSON.parse(r.result);if(Array.isArray(j.people)&&Array.isArray(j.tx)){people=j.people;tx=j.tx;persist();resetForm();render()}else alert("தவறான கோப்பு")}catch(x){alert("தவறான கோப்பு")}};r.readAsText(f)}
+resetForm();render();
+$("gasUrl").value=gas;if(gas)pull();
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&gas&&!dirty)pull()});
+</script>
+</body>
+</html>
