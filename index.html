@@ -106,7 +106,7 @@ td.act{white-space:nowrap}
      <input id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
      <button class="b-g" onclick="saveGas()">சேமி &amp; Sync</button>
     </div>
-    <p class="sub">பேலன்ஸ் = வாங்கியது − கொடுத்தது. நேர்மறை என்றால் அவரிடமிருந்து வர வேண்டியது, எதிர்மறை என்றால் அவருக்குக் கொடுக்க வேண்டியது.</p>
+    <p class="sub">பேலன்ஸ் = கொடுத்தது − வாங்கியது. நேர்மறை என்றால் உங்களுக்கு வர வேண்டியது, எதிர்மறை என்றால் நீங்கள் கொடுக்க வேண்டியது.</p>
    </div>
    <div id="pDet" class="mt" style="display:none"></div>
   </div>
@@ -152,9 +152,9 @@ function find(name,phone){var ph=digits(phone),n=name.trim().toLowerCase();
  if(ph.length>=6){var a=people.filter(function(p){return digits(p.phone)===ph})[0];if(a)return a}
  return people.filter(function(p){return p.name.trim().toLowerCase()===n})[0]}
 function fillPhone(){var p=find($("name").value,"");if(p&&!$("phone").value&&p.phone)$("phone").value=p.phone}
-function sums(pid){var b=0,g=0;tx.forEach(function(t){if(t.pid===pid){if(t.type==="b")b+=t.amt;else g+=t.amt}});return{b:b,g:g,bal:Math.round((b-g)*100)/100}}
-function balHtml(v){if(v>0)return '<span class="pos">'+money(v)+'<span class="lb">வர வேண்டியது</span></span>';
- if(v<0)return '<span class="neg">'+money(-v)+'<span class="lb">கொடுக்க வேண்டியது</span></span>';
+function sums(pid){var b=0,g=0;tx.forEach(function(t){if(t.pid===pid){if(t.type==="b")b+=t.amt;else g+=t.amt}});return{b:b,g:g,bal:Math.round((g-b)*100)/100}}
+function balHtml(v){if(v>0)return '<span class="neg">'+money(v)+'<span class="lb">வர வேண்டியது</span></span>';
+ if(v<0)return '<span class="pos">'+money(-v)+'<span class="lb">கொடுக்க வேண்டியது</span></span>';
  return '<span class="zero">₹0<span class="lb">தீர்ந்தது</span></span>'}
 function cleanup(){people=people.filter(function(p){return tx.some(function(t){return t.pid===p.id})})}
 function save(){
@@ -188,7 +188,7 @@ function editP(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p
 function det(pid){var p=people.filter(function(x){return x.id===pid})[0];if(!p)return;
  var s=sums(pid),run=0;
  var L=tx.filter(function(t){return t.pid===pid}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});
- var rows=L.map(function(t){run+=(t.type==="b"?t.amt:-t.amt);run=Math.round(run*100)/100;
+ var rows=L.map(function(t){run+=(t.type==="g"?t.amt:-t.amt);run=Math.round(run*100)/100;
   return '<tr><td>'+fd(t.date)+'</td><td>'+(t.type==="b"?money(t.amt):"")+'</td><td>'+(t.type==="g"?money(t.amt):"")+'</td><td>'+money(run)+'</td><td class="l">'+esc(t.note)+'</td><td class="act"><button class="b-y sm" onclick="editT(\''+t.id+'\')">✏️</button> <button class="b-r sm" onclick="delT(\''+t.id+'\',\''+pid+'\')">🗑️</button></td></tr>'}).join("");
  $("pDet").innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div><b style="font-size:1.1rem">'+esc(p.name)+'</b><div class="sub">'+esc(p.phone||"செல் நம்பர் இல்லை")+'</div></div><div style="text-align:right">'+balHtml(s.bal)+'</div></div>'+
  '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="sm" onclick="addFor(\''+pid+'\')">➕ புதிய பதிவு</button><button class="b-g sm" onclick="wa(\''+pid+'\')">💬 வாட்சப்</button><button class="b-y sm" onclick="editP(\''+pid+'\')">பெயர்/செல் திருத்து</button></div>'+
@@ -203,7 +203,7 @@ function render(){
  var q=$("q").value.trim().toLowerCase(),R=people.map(function(p){var s=sums(p.id);return{p:p,b:s.b,g:s.g,bal:s.bal}});
  R.sort(function(a,b){return a.p.name.localeCompare(b.p.name,"ta")});
  var tb=0,tg=0;R.forEach(function(r){tb+=r.b;tg+=r.g});
- $("s1").textContent=money(tb);$("s2").textContent=money(tg);$("s3").textContent=money(tb-tg);
+ $("s1").textContent=money(tb);$("s2").textContent=money(tg);$("s3").textContent=money(tg-tb);
  var nP=R.filter(function(r){return r.bal>0}).length,nN=R.filter(function(r){return r.bal<0}).length,nZ=R.filter(function(r){return r.bal===0}).length;
  var T=[["all","எல்லாம் ("+R.length+")"],["pos","வர வேண்டியவை ("+nP+")"],["neg","கொடுக்க வேண்டியவை ("+nN+")"],["zero","தீர்ந்தவை ("+nZ+")"]];
  $("tabs").innerHTML=T.map(function(t){return '<button class="'+(tab===t[0]?"on":"")+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+'</button>'}).join("");
